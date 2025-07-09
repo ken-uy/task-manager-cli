@@ -3,78 +3,86 @@ import json
 import os
 import sys
 
-TASKS_FILE = "tasks.json"
+# JSON file to store tasks
+TASK_FILE = "tasks.json"
 
 
 def load_tasks():
-    if os.path.exists(TASKS_FILE):
-        with open(TASKS_FILE, "r") as f:
+    # Load tasks from JSON file, return list
+    if os.path.exists(TASK_FILE):
+        with open(TASK_FILE, "r") as f:
             return json.load(f)
     return []
 
 
 def save_tasks(tasks):
-    with open(TASKS_FILE, "w") as f:
+    # Save tasks list to JSON file
+    with open(TASK_FILE, "w") as f:
         json.dump(tasks, f, indent=2)
 
 
 def add_tasks(tasks, description):
+    # Find next id, append task, print confirmation
     new_id = max([t["id"] for t in tasks], default=0) + 1
     tasks.append({"id": new_id, "task": description, "done": False})
-    print(f"Added tasks [{new_id}]: {description}")
+    print(f"Added task [{new_id}]: {description}")
 
 
 def list_tasks(tasks):
+    # List all tasks with status
     if not tasks:
-        print("No tasks found")
-        return
-
-    for task in tasks:
-        status = "✅" if task["done"] else "❌"
-        print(f"[{task['id']}] {status} {task['task']}")
+        print("No tasks")
+    for t in tasks:
+        status = "✅" if t["done"] else "❌"
+        print(f"[{t['id']}]: {status} {t['task']}")
 
 
 def mark_done(tasks, task_id):
+    # Mark task as done by id
     for task in tasks:
         if task["id"] == task_id:
             task["done"] = True
-            print(f"Marked task [{task_id}] as done")
+            print("Task marked done")
             return
-    print(f"Task [{task_id}] not found")
+    print(f"[{task_id}] is not on the list")
 
 
-def delete_task(tasks, task_id):
+def delete_tasks(tasks, delete_id):
+    # Delete task by id
     for task in tasks:
-        if task["id"] == task_id:
+        if task["id"] == delete_id:
             tasks.remove(task)
-            print(f"Deleted tasks [{task_id}]")
+            print("Delete successful")
             return
-    print(f"Task [{task_id}] not found")
+    print(f"[{delete_id}] is not on the list")
 
 
 def clear_tasks():
-    with open(TASKS_FILE, "w") as f:
+    # Clear all tasks from file
+    with open(TASK_FILE, "w") as f:
         json.dump([], f, indent=2)
-    print("Cleared all tasks")
+    print("Tasks cleared")
 
 
 def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--add", type=str)
-    parser.add_argument("--list", action="store_true")
-    parser.add_argument("--done", type=int)
-    parser.add_argument("--delete", type=int)
-    parser.add_argument("--clear", action="store_true")
-
-    args = parser.parse_args()
+    # Parse CLI arguments
+    parse = argparse.ArgumentParser()
+    parse.add_argument("--add", type=str)
+    parse.add_argument("--list", action="store_true")
+    parse.add_argument("--done", type=int)
+    parse.add_argument("--delete", type=int)
+    parse.add_argument("--clear", action="store_true")
+    args = parse.parse_args()
 
     if args.clear:
+        # Clear tasks and exit
         clear_tasks()
         sys.exit(0)
 
+    # Load existing tasks
     tasks = load_tasks()
 
+    # Handle actions
     if args.add:
         add_tasks(tasks, args.add)
     elif args.list:
@@ -82,10 +90,11 @@ def main():
     elif args.done:
         mark_done(tasks, args.done)
     elif args.delete:
-        delete_task(tasks, args.delete)
+        delete_tasks(tasks, args.delete)
     else:
-        print("Please provide an action: --add, --list, --done, --delete, --clear")
+        print("Please use one of --add, --list, --done, --delete, or --clear")
 
+    # Save updated tasks
     save_tasks(tasks)
 
 
